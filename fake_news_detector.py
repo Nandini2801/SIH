@@ -111,8 +111,6 @@ Ground_truth = input("First Article: ")
 
 Social_news= input("Second Article: ")
 
-nltk.download()
-
 nltk.download('omw-1.4')
 
 nltk.download('averaged_perceptron_tagger')
