@@ -29,6 +29,14 @@ from tensorflow.keras.layers import Input, LSTM, Embedding, Dense, Concatenate, 
 from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import EarlyStopping
 import warnings
+import gensim
+# upgrade gensim if you can't import softcossim
+from gensim.matutils import softcossim 
+from gensim import corpora
+import gensim.downloader as api
+from gensim.utils import simple_preprocess
+#print(gensim.__version__)
+#> '3.6.0'
 pd.set_option("display.max_colwidth", 200)
 warnings.filterwarnings("ignore")
 
@@ -107,59 +115,43 @@ def text_cleaner(text):
             long_words.append(i)   
     return (" ".join(long_words)).strip()
 
-Ground_truth = input("First Article: ")
-
-Social_news= input("Second Article: ")
-
 nltk.download('omw-1.4')
 
 nltk.download('averaged_perceptron_tagger')
-
-Ground_truth=text_cleaner(Ground_truth)
-Social_news=text_cleaner(Social_news)
-#print(ARTICLE)
-
-summary_gn=summarizer(Ground_truth, max_length=150, min_length=10, do_sample=False)
-summary_sn=summarizer(Social_news, max_length=150, min_length=10, do_sample=False)
-#print(summary_gn)
-
-for i in summary_gn:
-  summ_gn=i.values()
-for i in summary_sn:
-  summ_sn=i.values()
-
-#summ_gn.length()
-
-documents=[str(summ_gn),str(summ_sn)]
-
-import gensim
-# upgrade gensim if you can't import softcossim
-from gensim.matutils import softcossim 
-from gensim import corpora
-import gensim.downloader as api
-from gensim.utils import simple_preprocess
-print(gensim.__version__)
-#> '3.6.0'
-
 # Download the FastText model
 fasttext_model300 = api.load('fasttext-wiki-news-subwords-300')
 
-# Prepare a dictionary and a corpus.
-dictionary = corpora.Dictionary([simple_preprocess(doc) for doc in documents])
-print(dictionary)
-# Prepare the similarity matrix
-similarity_matrix = fasttext_model300.similarity_matrix(dictionary, tfidf=None, threshold=0.0, exponent=2.0, nonzero_limit=100)
-
-# Convert the sentences into bag-of-words vectors.
-sent_gn = dictionary.doc2bow(simple_preprocess(str(summ_gn)))
-sent_sn = dictionary.doc2bow(simple_preprocess(str(summ_sn)))
-
-sentences = [sent_gn, sent_sn]
+def article_pred():
+    Ground_truth = input("First Article: ")
+    Social_news= input("Second Article: ")
+    Ground_truth=text_cleaner(Ground_truth)
+    Social_news=text_cleaner(Social_news)
+    summary_gn=summarizer(Ground_truth, max_length=150, min_length=10, do_sample=False)
+    summary_sn=summarizer(Social_news, max_length=150, min_length=10, do_sample=False)
+    #print(summary_gn)
+    for i in summary_gn:
+        summ_gn=i.values()
+    for i in summary_sn:
+        summ_sn=i.values()
+        
+    #summ_gn.length()
+    documents=[str(summ_gn),str(summ_sn)]
+    # Prepare a dictionary and a corpus.
+    dictionary = corpora.Dictionary([simple_preprocess(doc) for doc in documents])
+    #print(dictionary)
+    # Prepare the similarity matrix
+    similarity_matrix = fasttext_model300.similarity_matrix(dictionary, tfidf=None, threshold=0.0, exponent=2.0, nonzero_limit=100)
+    
+    # Convert the sentences into bag-of-words vectors.
+    sent_gn = dictionary.doc2bow(simple_preprocess(str(summ_gn)))
+    sent_sn = dictionary.doc2bow(simple_preprocess(str(summ_sn)))
+    sentences = [sent_gn, sent_sn]
+    print("Similarity between articles: {}".format(softcossim(sent_gn, sent_sn, similarity_matrix)))
 
 # not needed for comparing two docs
 """
-import numpy as np
-import pandas as pd
+#import numpy as np
+#import pandas as pd
 
 def create_soft_cossim_matrix(sentences):
     len_array = np.arange(len(sentences))
@@ -170,7 +162,19 @@ def create_soft_cossim_matrix(sentences):
 create_soft_cossim_matrix(sentences)
 """
 
-print(softcossim(sent_gn, sent_sn, similarity_matrix))
+if __name__=="__main__":
+    while(True):
+        article_pred()
+
+#print(ARTICLE)
+
+
+
+
+
+
+
+
 
 #from sklearn.metrics.pairwise import cosine_similarity
 #print(cosine_similarity(df, df))
